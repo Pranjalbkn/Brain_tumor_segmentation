@@ -77,20 +77,29 @@ class UNet(nn.Module):
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 segmentation_model = None
 
-try:
-    print(f"Loading UNet segmentation model on device: {DEVICE}")
-    segmentation_model = UNet()
-    state_dict = torch.load(SEGMENTATION_MODEL_PATH, map_location=DEVICE)
-    segmentation_model.load_state_dict(state_dict)
-    segmentation_model.to(DEVICE)
-    segmentation_model.eval()
-    print("UNet segmentation model loaded successfully.")
-except FileNotFoundError:
-    print(f"ERROR: Segmentation model file not found at {SEGMENTATION_MODEL_PATH}. Using mock function.")
-    segmentation_model = "MOCK"
-except Exception as e:
-    print(f"CRITICAL ERROR loading segmentation model weights: {e}")
-    segmentation_model = "MOCK"
+
+def load_segmentation_model():
+    global segmentation_model
+    if segmentation_model is not None:
+        return segmentation_model
+
+    try:
+        print(f"Loading UNet segmentation model on device: {DEVICE}")
+        model = UNet()
+        state_dict = torch.load(SEGMENTATION_MODEL_PATH, map_location=DEVICE)
+        model.load_state_dict(state_dict)
+        model.to(DEVICE)
+        model.eval()
+        segmentation_model = model
+        print("UNet segmentation model loaded successfully.")
+    except FileNotFoundError:
+        print(f"ERROR: Segmentation model file not found at {SEGMENTATION_MODEL_PATH}. Using mock function.")
+        segmentation_model = "MOCK"
+    except Exception as e:
+        print(f"CRITICAL ERROR loading segmentation model weights: {e}")
+        segmentation_model = "MOCK"
+
+    return segmentation_model
 
 
 def grabcut_refine_segmentation(img_gray, prob):
@@ -197,7 +206,9 @@ async def predict_segmentation(
         if input_image.width < 100 or input_image.height < 100:
             raise HTTPException(status_code=400, detail="Image resolution is too low.")
 
-        if segmentation_model and segmentation_model != "MOCK":
+        model = load_segmentation_model()
+
+        if model and model != "MOCK":
             segmented_image, mode_text = pytorch_segmentation(input_image, mode)
             result_message = f"Segmentation process successful ({mode_text})."
         else:
