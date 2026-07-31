@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/static/home.html" },
+    { "source": "/segmentation", "destination": "/static/segmentation.html" },
+    { "source": "/classification", "destination": "/static/classification.html" },
+    { "source": "/config.js", "destination": "/static/config.js" }
+  ]
+}
