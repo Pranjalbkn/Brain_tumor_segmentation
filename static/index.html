@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain Tumor Segmentation & Classification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        .nav a:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .nav a.active {
+            background: #3498db;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            background: white;
+            padding: 3rem 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .hero p {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .card h2 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .card p {
+            color: #7f8c8d;
+            margin-bottom: 1.5rem;
+        }
+
+        .card ul {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .card ul li {
+            padding: 0.5rem 0;
+            color: #555;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .card ul li::before {
+            content: "✓";
+            color: #27ae60;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            text-decoration: none;
+            text-align: center;
+            transition: background 0.3s;
+            width: 100%;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn-purple {
+            background: #9b59b6;
+        }
+
+        .btn-purple:hover {
+            background: #8e44ad;
+        }
+
+        .features {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .features h3 {
+            text-align: center;
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 2rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .feature-item {
+            padding: 1rem;
+        }
+
+        .feature-item .icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-item h4 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-item p {
+            color: #7f8c8d;
+            font-size: 0.95rem;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: #95a5a6;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <nav class="nav">
+            <a href="/" class="active">Home</a>
+            <a href="/segmentation">Segmentation</a>
+            <a href="/classification">Classification</a>
+        </nav>
+    </div>
+
+    <div class="container">
+        <div class="hero">
+            <h1>Brain Tumor Segmentation & Classification</h1>
+            <p>Advanced medical imaging analysis using deep learning and computer vision techniques. Choose the tool that best fits your diagnostic needs.</p>
+        </div>
+
+        <div class="cards">
+            <a href="/segmentation" class="card">
+                <h2>Tumor Segmentation</h2>
+                <p>Identify and isolate tumor regions from MRI scans using deep learning models with optional refinement algorithms.</p>
+                <span class="btn">Start Segmentation →</span>
+            </a>
+
+            <a href="/classification" class="card">
+                <h2>Tumor Classification</h2>
+                <p>Classify tumor types with high accuracy using advanced feature extraction and machine learning algorithms.</p>
+                <span class="btn btn-purple">Start Classification →</span>
+            </a>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        <p>Made by Gourav Solanki • Harsh Banswal • Pranjal Gupta</p>
+    </div>
+
+</body>
+</html>
