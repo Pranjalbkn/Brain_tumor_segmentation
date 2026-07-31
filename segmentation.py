@@ -1,5 +1,6 @@
 import os
 import base64
+import gc
 import io
 import time
 from typing import Tuple
@@ -25,6 +26,9 @@ router = APIRouter()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SEGMENTATION_MODEL_PATH = os.path.join(BASE_DIR, "models", "BRISC_UNet.pth")
 IMAGE_SIZE = 256
+MAX_UPLOAD_SIDE = 768
+
+torch.set_num_threads(1)
 
 
 class UNet(nn.Module):
@@ -86,8 +90,10 @@ def load_segmentation_model():
     try:
         print(f"Loading UNet segmentation model on device: {DEVICE}")
         model = UNet()
-        state_dict = torch.load(SEGMENTATION_MODEL_PATH, map_location=DEVICE)
+        state_dict = torch.load(SEGMENTATION_MODEL_PATH, map_location="cpu", weights_only=True)
         model.load_state_dict(state_dict)
+        del state_dict
+        gc.collect()
         model.to(DEVICE)
         model.eval()
         segmentation_model = model
@@ -140,10 +146,21 @@ def overlay_mask(image_np, mask_np, color=(0, 0, 255), alpha=0.4):
     return cv2.addWeighted(img_bgr, 1, mask_bgr, alpha, 0)
 
 
-def pytorch_segmentation(input_image: Image.Image, mode: str) -> Tuple[Image.Image, str]:
+def resize_for_server(input_image: Image.Image) -> Image.Image:
+    width, height = input_image.size
+    longest_side = max(width, height)
+    if longest_side <= MAX_UPLOAD_SIDE:
+        return input_image
+
+    scale = MAX_UPLOAD_SIDE / longest_side
+    new_size = (int(width * scale), int(height * scale))
+    return input_image.resize(new_size, Image.Resampling.LANCZOS)
+
+
+def pytorch_segmentation(input_image: Image.Image, model, mode: str) -> Tuple[Image.Image, str]:
     img_gray_pil = input_image.convert("L")
     img_gray_np = np.array(img_gray_pil)
-    prob_map = unet_prob_map(img_gray_np, segmentation_model, DEVICE)
+    prob_map = unet_prob_map(img_gray_np, model, DEVICE)
 
     final_mask_np = None
     color = (0, 0, 255)
@@ -200,16 +217,18 @@ async def predict_segmentation(
     mode: str = Form("UNet Only"),
 ):
     try:
+        print(f"Received /predict request: filename={file.filename}, mode={mode}")
         image_data = await file.read()
         input_image = Image.open(io.BytesIO(image_data)).convert("RGB")
 
         if input_image.width < 100 or input_image.height < 100:
             raise HTTPException(status_code=400, detail="Image resolution is too low.")
 
+        input_image = resize_for_server(input_image)
         model = load_segmentation_model()
 
         if model and model != "MOCK":
-            segmented_image, mode_text = pytorch_segmentation(input_image, mode)
+            segmented_image, mode_text = pytorch_segmentation(input_image, model, mode)
             result_message = f"Segmentation process successful ({mode_text})."
         else:
             segmented_image, mode_text = mock_segmentation(input_image)
