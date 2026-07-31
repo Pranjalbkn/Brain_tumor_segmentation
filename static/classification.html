@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tumor Classification</title>
+
+
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,Helvetica,sans-serif;
+    background:#f5f7fa;color:#2c3e50;line-height:1.6;
+  }
+
+  .header{background:#2c3e50;color:#fff;padding:1.5rem 2rem;box-shadow:0 2px 4px rgba(0,0,0,.1)}
+  .nav{max-width:1200px;margin:0 auto;display:flex;gap:1rem;align-items:center}
+  .nav a{color:#fff;text-decoration:none;padding:.5rem 1rem;border-radius:4px}
+  .nav a:hover{background:rgba(255,255,255,.08)}
+  .nav a.active{background:#3498db}
+
+  .container{max-width:1400px;margin:0 auto;padding:2rem}
+  .title{background:#fff;padding:2rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:2rem;text-align:center}
+  .title h1{font-size:2rem;color:#2c3e50;margin-bottom:.5rem}
+  .title p{color:#7f8c8d}
+
+  .info-box{background:#e8f4f8;border-left:4px solid #3498db;padding:1rem;border-radius:4px;margin-bottom:2rem}
+  .info-box p{color:#2c3e50;font-size:.95rem}
+
+  .main-grid{display:grid;grid-template-columns:400px 1fr;gap:2rem}
+  .panel{background:#fff;border-radius:8px;padding:2rem;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  .panel h2{color:#2c3e50;margin-bottom:1.5rem;font-size:1.3rem;padding-bottom:.75rem;border-bottom:2px solid #ecf0f1}
+
+  /* Upload area fixes */
+  .upload-area{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:.5rem;
+    width:100%;
+    min-height:160px;
+    border:2px dashed #3498db;
+    border-radius:8px;
+    padding:1.5rem;
+    text-align:center;
+    background:#f8fbfc;
+    cursor:pointer;
+    transition:all .25s ease;
+    overflow:hidden;
+  }
+  .upload-area:hover{border-color:#2980b9;background:#eef7fb}
+  .upload-area .icon{font-size:2.5rem;color:#3498db}
+  .upload-area .upload-text{font-weight:500;color:#2c3e50}
+  .upload-area .upload-hint{font-size:.9rem;color:#7f8c8d}
+
+  #imageUpload{display:none}
+
+  /* Preview: use a visible class toggled by JS */
+  .preview{margin-bottom:1.5rem;display:none}
+  .preview.visible{display:block}
+  .preview p{font-size:.9rem;color:#7f8c8d;margin-bottom:.5rem;font-weight:500}
+  .preview img{max-width:100%;border-radius:4px;border:1px solid #ddd;display:block}
+
+  .btn{width:100%;padding:.875rem;background:#3498db;color:#fff;border:0;border-radius:4px;font-size:1rem;font-weight:500;cursor:pointer;transition:background .2s}
+  .btn:hover:not(:disabled){background:#2980b9}
+  .btn:disabled{background:#bdc3c7;cursor:not-allowed}
+
+  .status{padding:1rem;border-radius:4px;margin-bottom:1.5rem;font-size:.95rem;display:block}
+  .status.info{background:#fff9e6;border-left:4px solid #f39c12;color:#7f6c00}
+  .status.success{background:#e8f8f5;border-left:4px solid #27ae60;color:#0f5132}
+  .status.error{background:#fde8e8;border-left:4px solid #e74c3c;color:#721c24}
+
+  .results-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.5rem;margin-bottom:1.5rem}
+  .result-box{background:#f8f9fa;border:1px solid #ddd;border-radius:4px;padding:1rem}
+  .result-box h3{font-size:.95rem;color:#7f8c8d;margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.5px}
+  .result-box img{width:100%;border-radius:4px;border:1px solid #ddd;display:none}
+  .result-box img.visible{display:block}
+  .result-box .placeholder{color:#95a5a6;text-align:center;padding:3rem 0}
+
+  .prediction-box,.features-box{display:none;background:#f8f9fa;border:1px solid #ddd;border-radius:4px;padding:1.5rem;margin-bottom:1.5rem}
+  .prediction-result{font-size:1.4rem;font-weight:600;color:#2c3e50;margin-bottom:.5rem}
+  .confidence{font-size:1rem;color:#7f8c8d}
+  .confidence strong{color:#27ae60}
+
+  .download-btn{display:none;width:100%;padding:.875rem;background:#27ae60;color:#fff;text-decoration:none;text-align:center;border-radius:4px;font-weight:500;transition:background .2s}
+  .download-btn:hover{background:#229954}
+
+  .loader{border:3px solid #f3f3f3;border-top:3px solid #3498db;border-radius:50%;width:20px;height:20px;animation:spin 1s linear infinite;display:none;margin-left:.5rem}
+  @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+
+  .btn-content{display:flex;align-items:center;justify-content:center}
+
+  @media (max-width:1024px){
+    .main-grid{grid-template-columns:1fr}
+    .results-grid{grid-template-columns:1fr}
+  }
+</style>
+
+
+</head>
+<body>
+  <div class="header">
+    <nav class="nav">
+      <a href="/">Home</a>
+      <a href="/segmentation">Segmentation</a>
+      <a href="/classification" class="active">Classification</a>
+    </nav>
+  </div>
+
+  <div class="container">
+    <div class="title">
+      <h1>Tumor Classification</h1>
+      <p>Classify brain tumors using texture features and machine learning</p>
+    </div>
+
+
+    <div class="main-grid">
+      <div class="panel">
+        <h2>Input</h2>
+
+        <!-- Upload label now a full-width flex container -->
+        <label for="imageUpload" class="upload-area" title="Click to upload an image">
+          <div class="icon">📤</div>
+          <div class="upload-text">Upload MRI Image</div>
+          <div class="upload-hint">Click to select file (PNG / JPG)</div>
+          <input type="file" id="imageUpload" accept="image/png,image/jpeg">
+        </label>
+
+        <div id="previewContainer" class="preview">
+          <p>Preview:</p>
+          <img id="imagePreview" src="" alt="Preview">
+        </div>
+
+        <button id="classifyButton" class="btn" disabled>
+          <span class="btn-content">
+            <span id="buttonText">Classify Tumor</span>
+            <div id="spinner" class="loader"></div>
+          </span>
+        </button>
+      </div>
+
+      <div class="panel">
+        <h2>Results</h2>
+        <div id="statusMessage" class="status info">Awaiting image upload to begin classification.</div>
+
+        <div class="prediction-box" id="predictionBox">
+          <h3>Prediction</h3>
+          <div class="prediction-result" id="predictionResult"></div>
+          <div class="confidence" id="confidenceResult"></div>
+        </div>
+
+        <div class="results-grid">
+          <div class="result-box">
+            <h3>Original Image</h3>
+            <div id="originalContainer">
+              <img id="originalImage" src="" alt="Original">
+              <p class="placeholder" id="originalPlaceholder">Original image will appear here</p>
+            </div>
+          </div>
+
+          <div class="result-box">
+            <h3>Segmented Tumor</h3>
+            <div id="segmentedContainer">
+              <img id="segmentedImage" src="" alt="Segmented">
+              <p class="placeholder" id="segmentedPlaceholder">Segmented result will appear here</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="features-box" id="featuresBox">
+          <h3>Extracted Features</h3>
+          <table class="features-table" id="featuresTable">
+            <thead>
+              <tr><th>Feature</th><th>Value</th></tr>
+            </thead>
+            <tbody id="featuresBody"></tbody>
+          </table>
+        </div>
+
+        <a id="downloadLink" href="#" download="segmented_tumor.jpg" class="download-btn">📥 Download Segmented Image</a>
+      </div>
+    </div>
+  </div>
+
+<script src="/config.js"></script>
+<script>
+  const API_BASE_URL = (window.API_BASE_URL || '').replace(/\/$/, '');
+  const API_URL = `${API_BASE_URL}/classify`;
+  const imageUpload = document.getElementById('imageUpload');
+  const imagePreview = document.getElementById('imagePreview');
+  const previewContainer = document.getElementById('previewContainer');
+  const classifyButton = document.getElementById('classifyButton');
+  const originalImage = document.getElementById('originalImage');
+  const segmentedImage = document.getElementById('segmentedImage');
+  const statusMessage = document.getElementById('statusMessage');
+  const predictionBox = document.getElementById('predictionBox');
+  const predictionResult = document.getElementById('predictionResult');
+  const confidenceResult = document.getElementById('confidenceResult');
+  const featuresBox = document.getElementById('featuresBox');
+  const featuresBody = document.getElementById('featuresBody');
+  const downloadLink = document.getElementById('downloadLink');
+  const spinner = document.getElementById('spinner');
+  const buttonText = document.getElementById('buttonText');
+  const originalPlaceholder = document.getElementById('originalPlaceholder');
+  const segmentedPlaceholder = document.getElementById('segmentedPlaceholder');
+
+  let selectedFile = null;
+
+  function setLoading(isLoading) {
+    classifyButton.disabled = isLoading || !selectedFile;
+    spinner.style.display = isLoading ? 'block' : 'none';
+    buttonText.textContent = isLoading ? 'Processing...' : 'Classify Tumor';
+  }
+
+  imageUpload.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      imagePreview.src = e.target.result;
+      previewContainer.classList.add('visible');   // show preview
+      classifyButton.disabled = false;
+      statusMessage.className = 'status info';
+      statusMessage.textContent = `File selected: ${file.name}. Ready to classify.`;
+      predictionBox.style.display = 'none';
+      featuresBox.style.display = 'none';
+      originalImage.classList.remove('visible');
+      segmentedImage.classList.remove('visible');
+      originalPlaceholder.style.display = 'block';
+      segmentedPlaceholder.style.display = 'block';
+      downloadLink.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  classifyButton.addEventListener('click', async () => {
+    if (!selectedFile) return;
+    setLoading(true);
+    statusMessage.className = 'status info';
+    statusMessage.textContent = 'Extracting features and classifying tumor... Please wait.';
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    try {
+      const response = await fetch(API_URL, { method: 'POST', body: formData });
+      if (!response.ok) {
+        const errorData = await response.json().catch(()=>({detail:'Request failed'}));
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (data.predicted_class && data.segmented_image && data.original_image) {
+        originalImage.src = `data:image/jpeg;base64,${data.original_image}`;
+        originalImage.classList.add('visible');
+        originalPlaceholder.style.display = 'none';
+        segmentedImage.src = `data:image/jpeg;base64,${data.segmented_image}`;
+        segmentedImage.classList.add('visible');
+        segmentedPlaceholder.style.display = 'none';
+        predictionResult.textContent = `${data.predicted_class}`;
+        confidenceResult.innerHTML = `Confidence: <strong>${data.confidence}%</strong>`;
+        predictionBox.style.display = 'block';
+        if (data.features) {
+          featuresBody.innerHTML = '';
+          for (const [key, value] of Object.entries(data.features)) {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${key}</td><td>${typeof value === 'number' ? value.toFixed(4) : value}</td>`;
+            featuresBody.appendChild(row);
+          }
+          featuresBox.style.display = 'block';
+        }
+        downloadLink.href = `data:image/jpeg;base64,${data.segmented_image}`;
+        downloadLink.style.display = 'block';
+        statusMessage.className = 'status success';
+        statusMessage.textContent = '✓ Classification completed successfully!';
+      } else {
+        throw new Error('Incomplete response data');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      statusMessage.className = 'status error';
+      statusMessage.textContent = `Error: ${error.message}`;
+      predictionBox.style.display = 'none';
+      featuresBox.style.display = 'none';
+      downloadLink.style.display = 'none';
+    } finally {
+      setLoading(false);
+    }
+  });
+</script>
+</body>
+</html>
